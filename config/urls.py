@@ -21,11 +21,15 @@ from notice_board import views
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
-router.register(r'groups', views.GroupViewSet)
+router.register(r'week', views.WeekViewset)
+router.register(r'assignment', views.AssignmentViewset)
+router.register(r'notice', views.NoticeViewset)
+# router.register(r'users', views.UserViewSet)
+# router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    path('api/', include(router.urls)),
 ]
 
 urlpatterns += router.urls
