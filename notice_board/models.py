@@ -2,7 +2,7 @@
 
 # # Create your models here.
 
-# class User(models.Model): # 개인정보 DB
+# class User(models.Model):
 #     student_id = models.IntegerField(help_text="Student ID", unique=True)
 #     name = models.CharField(help_text="Name", max_length=100)
 #     email = models.EmailField()
