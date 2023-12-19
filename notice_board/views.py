@@ -44,6 +44,19 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserSerializer
         # 나머지 요청 시에는 기본 UserSerializer를 사용
         return UserSerializer
+    
+def find_week_id(week_instance):
+    _user_id = week_instance.user_id
+    _weeks = week_instance.weeks
+
+    user_data = User.objects.filter(user_id=_user_id)
+    week_data = Week.objects.all()
+
+    # return values
+    find_student_id = -1
+    find_weeks_id = -1
+
+    
 
 class WeekViewset(viewsets.ModelViewSet):
     queryset = Week.objects.all()
@@ -53,6 +66,7 @@ class WeekViewset(viewsets.ModelViewSet):
         #이부분 고쳐야함
         #학번이랑 주차정보 있어야함
         week_instance = serializer.save()
+        print(serializer.data) # {'user_id': 1, 'week_id': 4, 'weeks': 4, 'assignment': []}
         #week_id를 동적으로 찾을 수 잇어야함
         user_assignment = Assignment.objects.filter(week_id=week_instance.week_id)
         
