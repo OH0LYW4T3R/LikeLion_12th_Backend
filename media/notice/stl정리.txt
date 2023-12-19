@@ -1,0 +1,77 @@
+vector
+선언 : vector<자료형> 변수명
+
+-참조-
+참조 : v.at(idx);
+첫번째 원소 참조 : v.front()
+마지막 원소 참조 : v.back();
+사이즈 참조 : v.size()
+
+-삽입 삭제-
+마지막 원소에 삽입 : v.push_back(값)
+마지막 원소 삭제 : v.pop_back(값)
+원하는 위치에 삽입 : v.insert(위치, 값)
+원하는 위치 삭제 : v.erasse(위치)
+
+-iterator 이용-
+첫번째 원소 가르킴 : v.begin();
+마지막의 "다음"을 가르킴 : v.end()
+맨 마지막 가르킴 : v.rbegin()
+맨 첫번째 가르킴 : v.rend()
+
+원소 접근
+vector<int>::iterator iter;
+for(iter = v.begin(); iter != v.end() ; iter++) {        
+	int i = std::distance(ci_book.begin(), iter);
+	cout << *iter << " ";    
+}
+
+
+
+
+원소 찾기
+auto iter = std::find(ci_book.begin(), ci_book.end(), isbn);
+
+map
+선언 : std::map<KeyType, ValueType> myMap;
+
+참조 : ValueType& refToValue = myMap[key];
+
+삽입
+삽입 : myMap[key] = value;
+        m.insert({"키", 값})
+
+삭제
+삭제 : myMap.erase(key);
+모든요소 삭제 : m.erase(m.begin(), m.end()); , m.clear();
+
+원소 접근
+std::map<KeyType, ValueType>::iterator iter;
+    for (iter = myMap.begin(); iter != myMap.end(); ++iter) {
+        // iter->first: key에 접근
+        // iter->second: value에 접근
+        std::cout << iter->first << ": " << iter->second << " ";
+    }
+
+원소 찾기
+if (m.find("Alice") != m.end()) {
+	cout << "find" << endl;
+}
+else {
+	cout << "not find" << endl;
+}
+
+
+
+
+
+연산자 오버로딩
+	클래스 이름 operator+(클래스 이름 &ref)
+	{
+		return NUMBOX(num1+ref.num1, num2+ref.num2);
+	}
+이게 곧
+NUMBOX result = nb1 + nb2;
+NUMBOX result = nb1.operator+(nb2); 이코드와 같음
+
+
