@@ -14,7 +14,7 @@ class WeekSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Week
-        fields = ['user_id', 'week_id', 'weeks', 'assignment']
+        fields = ['user_id', 'week_id', 'weeks', 'assignment_title', 'submission_status', 'assignment']
 
 class NoticeSerializer(serializers.ModelSerializer):
     class Meta:
