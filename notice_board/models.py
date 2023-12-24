@@ -38,4 +38,4 @@ class Notice(models.Model):
     notice_title = models.CharField(help_text="notice_title", max_length=100)
     notice_comment = models.TextField(help_text="notice_comment")
     notice_time = models.DateTimeField(default=timezone.now) # default=timezone.now
-    file = models.FileField(upload_to='notice/')
+    file = models.FileField(upload_to='notice/', blank=True, null=True)
