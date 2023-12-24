@@ -263,12 +263,20 @@ class NoticeViewset(viewsets.ModelViewSet):
             division = user[0].division
 
             if division == "front admin" or division == "back admin": # 운영진만 공지사항 쓰도록 함.
-                use_data = {
-                    "user_id" : user_id,
-                    "notice_title" : request.data.get('notice_title'),
-                    "notice_comment" : request.data.get('notice_comment'),
-                    "file" : request.data.get('file')
-                }
+
+                if not request.FILES.get('file'):
+                    use_data = {
+                        "user_id" : user_id,
+                        "notice_title" : request.data.get('notice_title'),
+                        "notice_comment" : request.data.get('notice_comment'),
+                    }
+                else:
+                    use_data = {
+                        "user_id" : user_id,
+                        "notice_title" : request.data.get('notice_title'),
+                        "notice_comment" : request.data.get('notice_comment'),
+                        "file" : request.data.get('file')
+                    }
 
                 serializer = self.get_serializer(data=use_data)
                 serializer.is_valid(raise_exception=True)
@@ -323,11 +331,9 @@ class NoticeViewset(viewsets.ModelViewSet):
             if(division == "front admin" or division == "back admin"):
                 instance = self.get_object()
                 self.perform_destroy(instance)
-
-                print(instance.file)
                 file_path = os.path.join(settings.MEDIA_ROOT, str(instance.file))
 
-                if os.path.exists(file_path):
+                if os.path.exists(file_path) and (file_path != (settings.MEDIA_ROOT + '\\')):
                     os.remove(file_path)
 
                 return Response({"detail : Success deletion"}, status=status.HTTP_204_NO_CONTENT) 

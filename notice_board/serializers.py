@@ -17,7 +17,7 @@ class WeekSerializer(serializers.ModelSerializer):
         fields = ['user_id', 'week_id', 'weeks', 'assignment_title', 'assignment_type', 'deadline', 'submission_status', 'assignment']
 
 class NoticeSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(use_url=True)
+    file = serializers.FileField(use_url=True, required=False)
 
     class Meta:
         model = Notice
