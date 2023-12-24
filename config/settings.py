@@ -35,8 +35,6 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = [env('ALLOWED_HOSTS')] # 프론트와 연결시 자신의 아이피 생성
-
-
 # Application definition
 
 INSTALLED_APPS = [
