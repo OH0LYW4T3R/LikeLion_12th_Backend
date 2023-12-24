@@ -3,6 +3,7 @@
 # # Create your models here.
 from django.db import models
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
 
 class User(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -29,7 +30,7 @@ class Assignment(models.Model):
     week_id = models.ForeignKey(Week, related_name="assignments", on_delete=models.CASCADE, db_column="week_id") # related_name => 역참조시 필요
     weeks = models.IntegerField(help_text="Weeks")
     assignment_id = models.AutoField(primary_key=True)
-    file = models.FileField(upload_to=upload_to_assignments)
+    file = models.FileField(upload_to=upload_to_assignments, validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'hwp'])])
     submission_time = models.DateTimeField(default=timezone.now) # default=timezone.now
 
 class Notice(models.Model):

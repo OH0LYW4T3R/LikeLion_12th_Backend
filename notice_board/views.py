@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 import os
+import shutil
 from django.conf import settings
 
 from .serializers import UserSerializer, WeekSerializer, AssignmentSerializer, NoticeSerializer
@@ -225,10 +226,11 @@ class AssignmentViewset(viewsets.ModelViewSet):
             file_name = str(assignment_instance[0].file)
             Assignment.objects.filter(week_id=week_id).delete()
 
-            file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+            file_path = os.path.join(settings.MEDIA_ROOT, f'assignments\{student_id}\{weeks}')
 
             if os.path.exists(file_path):
-                os.remove(file_path)
+                print(file_path)
+                shutil.rmtree(file_path)
 
             week = Week.objects.filter(week_id=week_id)
             # self.perform_destroy(instance)
