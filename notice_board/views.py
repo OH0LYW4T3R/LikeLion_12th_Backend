@@ -3,8 +3,13 @@ from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
+import os
+from django.conf import settings
+
 from .serializers import UserSerializer, WeekSerializer, AssignmentSerializer, NoticeSerializer
 from .models import User, Week, Assignment, Notice
+
+from datetime import datetime
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -38,14 +43,14 @@ class WeekViewset(viewsets.ModelViewSet):
             user_division = user[0].division
             user_id = user[0].id
 
-            if user_division == "admin":
+            if user_division == "front admin" or user_division == "back admin":
                 weekset = Week.objects.filter(weeks=kwargs.get('pk'))
                 serializer = self.get_serializer(weekset, many=True)
-                return Response(serializer.data)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 weekset = Week.objects.filter(weeks=kwargs.get('pk'), user_id=user_id)
                 serializer = self.get_serializer(weekset, many=True)
-                return Response(serializer.data)
+                return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({"detail : User not Found or User Logout"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -54,22 +59,46 @@ class WeekViewset(viewsets.ModelViewSet):
         user = User.objects.filter(student_id=request.data.get('student_id'))
 
         #실사용시 세션을 넘겨받고 세션디비에서 찾고 학번 얻어야함.
-
         if user.exists():
             user_division = user[0].division
+            assignment_type = request.data.get('assignment_type')
 
-            if user_division == "admin":
-                all_user = User.objects.exclude(division="admin")
+            if user_division == "front admin":
+                if(assignment_type == "C"):
+                    all_user = User.objects.exclude(division__in=["front admin", "back admin"])
+                elif(assignment_type == "F"):
+                    all_user = User.objects.exclude(division__in=["front admin", "back admin", 'back'])
+                else:
+                    return Response({"detail : Your not back admin"}, status=status.HTTP_401_UNAUTHORIZED)
                 weeks = request.data.get('weeks')
                 assignment_title = request.data.get('assignment_title')
-                week_check = Week.objects.filter(weeks=weeks)
+                deadline = request.data.get('deadline')
+                week_check = Week.objects.filter(weeks=weeks, assignment_type=assignment_type)
 
                 if not week_check.exists():
                     for u in all_user:
-                        Week.objects.create(user_id=u, weeks=weeks, assignment_title = assignment_title, submission_status="F")
+                        Week.objects.create(user_id=u, weeks=weeks, assignment_title = assignment_title, assignment_type=assignment_type, deadline = deadline, submission_status="F")
                     return Response({"detail : Create Week"}, status=status.HTTP_200_OK) 
                 else:
                     return Response({"detail : Already Create Week"}, status=status.HTTP_400_BAD_REQUEST) 
+            elif user_division == "back admin":
+                if(assignment_type == "C"):
+                    all_user = User.objects.exclude(division__in=["front admin", "back admin"])
+                elif(assignment_type == "B"):
+                    all_user = User.objects.exclude(division__in=["front admin", "back admin", 'front'])
+                else:
+                    return Response({"detail : Your not front admin"}, status=status.HTTP_401_UNAUTHORIZED)
+                weeks = request.data.get('weeks')
+                assignment_title = request.data.get('assignment_title')
+                deadline = request.data.get('deadline')
+                week_check = Week.objects.filter(weeks=weeks, assignment_type=assignment_type)
+
+                if not week_check.exists():
+                    for u in all_user:
+                        Week.objects.create(user_id=u, weeks=weeks, assignment_title = assignment_title, assignment_type=assignment_type, deadline = deadline, submission_status="F")
+                    return Response({"detail : Create Week"}, status=status.HTTP_200_OK) 
+                else:
+                    return Response({"detail : Already Create Week"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"detail : Your not admin"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
@@ -85,15 +114,25 @@ class WeekViewset(viewsets.ModelViewSet):
             user_division = user[0].division
 
             # 여기서 프론트엔드에서 
-            if user_division == "admin":
+            if user_division == "front admin" or user_division == "back admin":
                 weeks = kwargs.get('pk')
-                week_check = Week.objects.filter(weeks=weeks)
 
-                if week_check.exists():
-                    Week.objects.filter(weeks=weeks).delete()
-                    return Response({"detail : Delete Week"}, status=status.HTTP_200_OK) 
-                else:
-                    return Response({"detail : Already Delete Week"}, status=status.HTTP_400_BAD_REQUEST) 
+                if user_division == "front admin":
+                    week_check = Week.objects.filter(weeks=weeks, assignment_type__in=["F", "C"])
+
+                    if week_check.exists():
+                        Week.objects.filter(weeks=weeks, assignment_type__in=["F", "C"]).delete()
+                        return Response({"detail : Delete Week"}, status=status.HTTP_200_OK) 
+                    else:
+                        return Response({"detail : Already Delete Week or Your not same type"}, status=status.HTTP_400_BAD_REQUEST) 
+                elif user_division == "back admin":
+                    week_check = Week.objects.filter(weeks=weeks, assignment_type__in=["B", "C"])
+                   
+                    if week_check.exists():
+                        Week.objects.filter(weeks=weeks, assignment_type__in=["B", "C"]).delete()
+                        return Response({"detail : Delete Week"}, status=status.HTTP_200_OK) 
+                    else:
+                        return Response({"detail : Already Delete Week or Your not same type"}, status=status.HTTP_400_BAD_REQUEST) 
             else:
                 return Response({"detail : Your not admin"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
@@ -138,8 +177,7 @@ class AssignmentViewset(viewsets.ModelViewSet):
                     "week_id" : week_id,
                     "weeks" : week[0].weeks,
                     "assignment_title" : request.data.get('assignment_title'),
-                    "file" : request.data.get('file'),
-                    "submission_time" : request.data.get('submission_time')
+                    "file" : request.data.get('file')
                 }
 
                 serializer = self.get_serializer(data=use_data)
@@ -147,10 +185,16 @@ class AssignmentViewset(viewsets.ModelViewSet):
                 self.perform_create(serializer)
                 headers = self.get_success_headers(serializer.data)
 
+                submission_time = serializer.data.get('submission_time')
+                week_deadline = week[0].deadline
+
                 assignment_count = Assignment.objects.filter(week_id=week_id).count()
                 
                 if(assignment_count > 0):
-                    week.update(submission_status="T")
+                    if datetime.fromisoformat(str(submission_time)) > datetime.fromisoformat(str(week_deadline)):
+                        week.update(submission_status="L")
+                    else:
+                        week.update(submission_status="T")
 
                 return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             else:
@@ -178,7 +222,13 @@ class AssignmentViewset(viewsets.ModelViewSet):
 
         if assignment_instance.exists():
             week_id = assignment_instance[0].week_id.week_id
+            file_name = str(assignment_instance[0].file)
             Assignment.objects.filter(week_id=week_id).delete()
+
+            file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
             week = Week.objects.filter(week_id=week_id)
             # self.perform_destroy(instance)
@@ -191,7 +241,7 @@ class AssignmentViewset(viewsets.ModelViewSet):
             return Response({"detail": "Delete Success"}, status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({"detail : Already Delete or Not found Assignment"}, status=status.HTTP_404_NOT_FOUND)
-    
+
 class NoticeViewset(viewsets.ModelViewSet):
     queryset = Notice.objects.all()
     serializer_class = NoticeSerializer
@@ -210,13 +260,11 @@ class NoticeViewset(viewsets.ModelViewSet):
             user_id = user[0].id #id 추출
             division = user[0].division
 
-            if division == "admin": # 운영진만 공지사항 쓰도록 함.
-
+            if division == "front admin" or division == "back admin": # 운영진만 공지사항 쓰도록 함.
                 use_data = {
                     "user_id" : user_id,
                     "notice_title" : request.data.get('notice_title'),
                     "notice_comment" : request.data.get('notice_comment'),
-                    "notice_time" : request.data.get('notice_time'),
                     "file" : request.data.get('file')
                 }
 
@@ -227,7 +275,7 @@ class NoticeViewset(viewsets.ModelViewSet):
 
                 use_data['student_id'] = student_id
 
-                return Response(use_data, status=status.HTTP_201_CREATED, headers=headers)
+                return Response({'detail : Save Success'}, status=status.HTTP_201_CREATED, headers=headers)
             else:
                 return Response({"detail : Your not admin"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
@@ -239,10 +287,17 @@ class NoticeViewset(viewsets.ModelViewSet):
         if user.exists():
             division = user[0].division
 
-            if(division == "admin"):
+            if(division == "front admin" or division == "back admin"):
                 instance = self.get_object()
                 self.perform_destroy(instance)
-                return Response(status=status.HTTP_204_NO_CONTENT) 
+
+                print(instance.file)
+                file_path = os.path.join(settings.MEDIA_ROOT, str(instance.file))
+
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+                return Response({"detail : Success deletion"}, status=status.HTTP_204_NO_CONTENT) 
             else:
                 return Response({"detail : Your not admin"}, status=status.HTTP_401_UNAUTHORIZED)
         else:

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-%ow6vg4q*is0+v+a%pf9!rwb=qb)w-enl57_cdxszbs8q7ztx5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [] # 프론트와 연결시 자신의 아이피 생성
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'notice_board',
     'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +50,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # 추가
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    # 여기에 프론트엔드 도메인을 추가하세요.
+    "http://172.20.10.8:3000 ",
+]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'config.urls'
 
