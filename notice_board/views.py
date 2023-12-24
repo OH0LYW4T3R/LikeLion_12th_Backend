@@ -283,6 +283,37 @@ class NoticeViewset(viewsets.ModelViewSet):
         else:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
+    def update(self, request, *args, **kwargs):
+        user = User.objects.filter(student_id=request.data.get('student_id'))
+
+        if user.exists():
+            use_data = {
+                "user_id" : user[0].id,
+                "notice_title" : request.data.get('notice_title'),
+                "notice_comment" : request.data.get('notice_comment'),
+                "file" : request.data.get('file')
+            }
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+
+            file_path = os.path.join(settings.MEDIA_ROOT, str(instance.file))
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            serializer = self.get_serializer(instance, data=use_data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                instance._prefetched_objects_cache = {}
+
+            return Response(serializer.data)
+        else:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
     def destroy(self, request, *args, **kwargs):
         user = User.objects.filter(student_id=request.data.get('student_id'))
 
