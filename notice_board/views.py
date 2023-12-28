@@ -146,11 +146,12 @@ class AssignmentViewset(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         #나중엔 세션아이디로
-        user = User.objects.filter(student_id=request.data.get('student_id'))
+        student_id = request.query_params.get('student_id')
+        user = User.objects.filter(student_id=student_id)
 
         if user.exists():
             user_id = user[0].id
-            assignmentset = Assignment.objects.filter(weeks=kwargs.get('pk'), student_id=request.data.get('student_id'))
+            assignmentset = Assignment.objects.filter(weeks=kwargs.get('pk'), student_id=student_id)
 
             if assignmentset.exists():
                 serializer = self.get_serializer(assignmentset, many=True)
